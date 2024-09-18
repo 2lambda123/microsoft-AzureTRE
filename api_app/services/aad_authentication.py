@@ -20,6 +20,7 @@ from services.logging import logger
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from security import safe_requests
 
 
 MICROSOFT_GRAPH_URL = config.MICROSOFT_GRAPH_URL.strip("/")
@@ -171,11 +172,11 @@ class AzureADAuthorization(AccessService):
         Rather tha use PyJWKClient.get_signing_key_from_jwt every time, we'll get all the keys from AAD and cache them.
         """
         if key_id not in AzureADAuthorization._jwt_keys:
-            response = requests.get(f"{self.aad_instance}/{config.AAD_TENANT_ID}/v2.0/.well-known/openid-configuration")
+            response = safe_requests.get(f"{self.aad_instance}/{config.AAD_TENANT_ID}/v2.0/.well-known/openid-configuration")
             aad_metadata = response.json() if response.ok else None
             jwks_uri = aad_metadata['jwks_uri'] if aad_metadata and 'jwks_uri' in aad_metadata else None
             if jwks_uri:
-                response = requests.get(jwks_uri)
+                response = safe_requests.get(jwks_uri)
                 keys = response.json() if response.ok else None
                 if keys and 'keys' in keys:
                     for key in keys['keys']:
@@ -236,12 +237,12 @@ class AzureADAuthorization(AccessService):
     def _get_app_sp_graph_data(self, client_id: str) -> dict:
         msgraph_token = self._get_msgraph_token()
         sp_endpoint = self._get_service_principal_endpoint(client_id)
-        graph_data = requests.get(sp_endpoint, headers=self._get_auth_header(msgraph_token)).json()
+        graph_data = safe_requests.get(sp_endpoint, headers=self._get_auth_header(msgraph_token)).json()
         return graph_data
 
     def _get_user_role_assignments(self, client_id, msgraph_token):
         sp_roles_endpoint = self._get_service_principal_assigned_roles_endpoint(client_id)
-        return requests.get(sp_roles_endpoint, headers=self._get_auth_header(msgraph_token)).json()
+        return safe_requests.get(sp_roles_endpoint, headers=self._get_auth_header(msgraph_token)).json()
 
     def _get_user_emails(self, roles_graph_data, msgraph_token):
         batch_endpoint = self._get_batch_endpoint()
