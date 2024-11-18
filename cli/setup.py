@@ -49,7 +49,7 @@ setup(
         "PyJWT==2.8.0",
         "azure-cli-core==2.57.0",
         "azure-identity==1.16.1",
-        "aiohttp==3.10.2",
+        "aiohttp==3.10.11",
         "security==1.3.1",
     ],
 
